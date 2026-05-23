@@ -14,6 +14,7 @@ function App() {
   const [dirty, setDirty] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef(content);
   contentRef.current = content;
 
@@ -112,52 +113,37 @@ function App() {
 
   const html = marked.parse(content) as string;
 
+  useEffect(() => {
+    if (!previewRef.current) return;
+    const pres = previewRef.current.querySelectorAll("pre");
+    for (const pre of pres) {
+      if (pre.querySelector(".copy-btn")) continue;
+      const btn = document.createElement("button");
+      btn.className = "copy-btn";
+      btn.textContent = "Copy";
+      btn.addEventListener("click", async () => {
+        const code = pre.querySelector("code");
+        if (!code) return;
+        try {
+          await navigator.clipboard.writeText(code.textContent || "");
+          btn.textContent = "Copied!";
+          setTimeout(() => {
+            btn.textContent = "Copy";
+          }, 2000);
+        } catch {
+          btn.textContent = "Failed";
+          setTimeout(() => {
+            btn.textContent = "Copy";
+          }, 2000);
+        }
+      });
+      pre.style.position = "relative";
+      pre.appendChild(btn);
+    }
+  }, [html]);
+
   return (
     <div className="app">
-      <header className="toolbar">
-        <div className="toolbar-left">
-          <button className="toolbar-btn" onClick={newFile} title="New File">
-            New
-          </button>
-          <button className="toolbar-btn" onClick={openFile} title="Open File">
-            Open
-          </button>
-          <button className="toolbar-btn" onClick={saveFile} title="Save File">
-            Save
-          </button>
-        </div>
-        <div className="toolbar-center">
-          <div className="view-toggle">
-            <button
-              className={`toggle-btn${viewMode === "edit" ? " active" : ""}`}
-              onClick={() => setViewMode("edit")}
-            >
-              Edit
-            </button>
-            <button
-              className={`toggle-btn${viewMode === "split" ? " active" : ""}`}
-              onClick={() => setViewMode("split")}
-            >
-              Split
-            </button>
-            <button
-              className={`toggle-btn${viewMode === "preview" ? " active" : ""}`}
-              onClick={() => setViewMode("preview")}
-            >
-              Preview
-            </button>
-          </div>
-        </div>
-        <div className="toolbar-right">
-          <button
-            className="toolbar-btn theme-btn"
-            onClick={toggleTheme}
-            title="Toggle theme"
-          >
-            {theme === "light" ? "\u263E" : "\u2600"}
-          </button>
-        </div>
-      </header>
       <main className="main">
         {(viewMode === "edit" || viewMode === "split") && (
           <div className="pane editor-pane">
@@ -175,12 +161,56 @@ function App() {
         {(viewMode === "preview" || viewMode === "split") && (
           <div className="pane preview-pane">
             <div
+              ref={previewRef}
               className="preview"
               dangerouslySetInnerHTML={{ __html: html }}
             />
           </div>
         )}
       </main>
+      <footer className="toolbar">
+        <div className="toolbar-left">
+          <button className="toolbar-btn" onClick={newFile} title="New File">
+            New
+          </button>
+          <button className="toolbar-btn" onClick={openFile} title="Open File">
+            Open
+          </button>
+          <button className="toolbar-btn" onClick={saveFile} title="Save File">
+            Save
+          </button>
+        </div>
+        <div className="toolbar-right">
+          <button
+            className={`icon-btn${viewMode === "edit" ? " active" : ""}`}
+            onClick={() => setViewMode("edit")}
+            title="Edit mode"
+          >
+            E
+          </button>
+          <button
+            className={`icon-btn${viewMode === "split" ? " active" : ""}`}
+            onClick={() => setViewMode("split")}
+            title="Split view"
+          >
+            S
+          </button>
+          <button
+            className={`icon-btn${viewMode === "preview" ? " active" : ""}`}
+            onClick={() => setViewMode("preview")}
+            title="Preview mode"
+          >
+            P
+          </button>
+          <button
+            className="icon-btn"
+            onClick={toggleTheme}
+            title="Toggle theme"
+          >
+            {theme === "light" ? "\u263E" : "\u2600"}
+          </button>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -27,22 +27,22 @@
 }
 
 [data-theme="dark"] {
-  --bg: #1a1b26;
-  --bg-secondary: #24253a;
-  --text: #e0e0e0;
-  --text-secondary: #999999;
-  --border: #3b3d54;
-  --accent: #60a5fa;
-  --accent-hover: #93c5fd;
-  --toolbar-bg: #1e1f33;
-  --code-bg: #1e1f33;
-  --blockquote-border: #60a5fa;
-  --table-border: #3b3d54;
-  --preview-text: #e0e0e0;
-  --preview-heading: #f0f0f0;
-  --preview-link: #60a5fa;
-  --preview-code-text: #e0e0e0;
-  --preview-blockquote-text: #aaaaaa;
+  --bg: #161616;
+  --bg-secondary: #262626;
+  --text: #f2f4f8;
+  --text-secondary: #dde1e6;
+  --border: #525252;
+  --accent: #0f62fe;
+  --accent-hover: #0353e9;
+  --toolbar-bg: #262626;
+  --code-bg: #262626;
+  --blockquote-border: #0f62fe;
+  --table-border: #525252;
+  --preview-text: #f2f4f8;
+  --preview-heading: #f2f4f8;
+  --preview-link: #78a9ff;
+  --preview-code-text: #f2f4f8;
+  --preview-blockquote-text: #dde1e6;
 }
 
 html,
@@ -67,13 +67,19 @@ body {
   height: 100vh;
 }
 
+.main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
 .toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 6px 12px;
   background: var(--toolbar-bg);
-  border-bottom: 1px solid var(--border);
+  border-top: 1px solid var(--border);
   gap: 8px;
   flex-shrink: 0;
   -webkit-user-select: none;
@@ -81,7 +87,6 @@ body {
 }
 
 .toolbar-left,
-.toolbar-center,
 .toolbar-right {
   display: flex;
   align-items: center;
@@ -105,49 +110,35 @@ body {
   border-color: var(--accent);
 }
 
-.view-toggle {
-  display: flex;
+.icon-btn {
+  width: 30px;
+  height: 30px;
+  padding: 0;
   border: 1px solid var(--border);
   border-radius: 4px;
-  overflow: hidden;
-}
-
-.toggle-btn {
-  padding: 5px 14px;
-  border: none;
-  background: transparent;
+  background: var(--bg);
   color: var(--text-secondary);
   font-size: 13px;
-  cursor: pointer;
+  font-weight: 600;
   font-family: inherit;
-  transition: background 0.15s, color 0.15s;
-  border-right: 1px solid var(--border);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  line-height: 1;
 }
 
-.toggle-btn:last-child {
-  border-right: none;
-}
-
-.toggle-btn:hover {
+.icon-btn:hover {
   color: var(--text);
   background: var(--bg-secondary);
+  border-color: var(--accent);
 }
 
-.toggle-btn.active {
+.icon-btn.active {
   background: var(--accent);
   color: #ffffff;
-}
-
-.theme-btn {
-  font-size: 16px;
-  line-height: 1;
-  padding: 5px 10px;
-}
-
-.main {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
+  border-color: var(--accent);
 }
 
 .pane {
@@ -161,16 +152,17 @@ body {
 }
 
 .editor-pane {
-  flex: 1;
+  justify-content: center;
 }
 
 .editor {
   width: 100%;
+  max-width: 800px;
   height: 100%;
   border: none;
   outline: none;
   resize: none;
-  padding: 16px 20px;
+  padding: 24px 20px;
   font-family: "SF Mono", "Fira Code", "Cascadia Code", "JetBrains Mono",
     Menlo, Monaco, Consolas, monospace;
   font-size: 14px;
@@ -185,16 +177,16 @@ body {
 }
 
 .preview-pane {
-  flex: 1;
-  overflow-y: auto;
+  justify-content: center;
 }
 
 .preview {
-  padding: 16px 20px;
+  width: 100%;
+  max-width: 800px;
+  padding: 24px 20px;
   font-size: 15px;
   line-height: 1.7;
   color: var(--preview-text);
-  max-width: 800px;
 }
 
 .preview h1,
@@ -283,6 +275,7 @@ body {
 .preview pre {
   margin: 1em 0;
   padding: 16px;
+  padding-top: 40px;
   border-radius: 6px;
   background: var(--code-bg);
   overflow-x: auto;
@@ -293,6 +286,33 @@ body {
   background: none;
   font-size: 13px;
   line-height: 1.5;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+  line-height: 1.4;
+}
+
+.preview pre:hover .copy-btn {
+  opacity: 1;
+}
+
+.copy-btn:hover {
+  background: var(--accent);
+  color: #ffffff;
+  border-color: var(--accent);
 }
 
 .preview hr {

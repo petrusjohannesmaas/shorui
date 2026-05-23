@@ -1,0 +1,32 @@
+Here are the Carbonfox colors:
+
+**Background scale:**
+- `#161616` — base background
+- `#262626` — raised surface
+- `#393939` — overlay / hover
+- `#525252` — subtle border
+
+**Foreground:**
+- `#f2f4f8` — primary text
+- `#dde1e6` — secondary text
+- `#8d8d8d` — muted / comments
+
+**Syntax colors:**
+- `#ee5396` — pink (keywords)
+- `#ff7eb6` — light pink (strings)
+- `#d2a8ff` — purple (constants)
+- `#78a9ff` — blue (functions)
+- `#82cfff` — light blue (methods)
+- `#3ddbd9` — teal (types)
+- `#42be65` — green (strings alt)
+- `#be95ff` — violet (builtins)
+- `#08bdba` — cyan (special)
+
+**UI accents:**
+- `#0f62fe` — IBM Blue (primary accent / focus ring)
+- `#393939` — selected background
+- `#ff832b` — orange (warnings)
+- `#fa4d56` — red (errors)
+- `#42be65` — green (success)
+
+These are pulled from the IBM Carbon Design System that Carbonfox is based on. Hand these to your agent and tell it to use `#161616` as the window background and `#0f62fe` as the primary interactive accent.
