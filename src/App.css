@@ -275,10 +275,10 @@ body {
 .preview pre {
   margin: 1em 0;
   padding: 16px;
-  padding-top: 40px;
   border-radius: 6px;
   background: var(--code-bg);
   overflow-x: auto;
+  position: relative;
 }
 
 .preview pre code {
@@ -290,23 +290,18 @@ body {
 
 .copy-btn {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  padding: 3px 10px;
+  top: 6px;
+  right: 6px;
+  padding: 2px 8px;
   border: 1px solid var(--border);
   border-radius: 4px;
-  background: var(--bg);
+  background: var(--bg-secondary);
   color: var(--text-secondary);
   font-size: 11px;
   font-family: inherit;
   cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.15s, background 0.15s, color 0.15s;
-  line-height: 1.4;
-}
-
-.preview pre:hover .copy-btn {
-  opacity: 1;
+  line-height: 1.5;
+  transition: background 0.15s, color 0.15s;
 }
 
 .copy-btn:hover {

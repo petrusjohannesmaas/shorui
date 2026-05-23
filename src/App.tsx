@@ -137,7 +137,6 @@ function App() {
           }, 2000);
         }
       });
-      pre.style.position = "relative";
       pre.appendChild(btn);
     }
   }, [html]);
