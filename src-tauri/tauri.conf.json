@@ -1,5 +1,5 @@
 {
-  "productName": "shorui",
+  "productName": "Shorui",
   "version": "0.1.0",
   "identifier": "com.shorui.app",
   "build": {
@@ -30,9 +30,16 @@
     ],
     "linux": {
       "deb": {
-        "depends": ["libwebkit2gtk-4.1-0", "libssl3"]
+        "depends": ["libwebkit2gtk-4.1-0", "libssl3"],
+        "desktopTemplate": "Shorui.desktop"
       }
-    }
+    },
+    "fileAssociations": [
+      {
+        "ext": ["md", "txt"],
+        "mimeType": "text/markdown"
+      }
+    ]
   },
   "plugins": {}
 }

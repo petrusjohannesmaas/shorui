@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { marked } from "marked";
 import { open, save, ask } from "@tauri-apps/plugin-dialog";
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
+import { invoke } from "@tauri-apps/api/core";
 
 type ViewMode = "edit" | "split" | "preview";
 type Theme = "light" | "dark";
@@ -23,6 +24,17 @@ function App() {
       "(prefers-color-scheme: dark)",
     ).matches;
     setTheme(prefersDark ? "dark" : "light");
+  }, []);
+
+  useEffect(() => {
+    invoke<string | null>("get_startup_file").then(async (path) => {
+      if (path) {
+        const text = await readTextFile(path);
+        setContent(text);
+        setFilePath(path);
+        setDirty(false);
+      }
+    });
   }, []);
 
   useEffect(() => {

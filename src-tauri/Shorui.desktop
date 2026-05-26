@@ -1,0 +1,9 @@
+[Desktop Entry]
+Categories=Utility;TextEditor;
+Exec=shorui %f
+StartupWMClass=shorui
+Icon=shorui
+Name=Shorui
+Terminal=false
+Type=Application
+MimeType=text/markdown;text/plain;
