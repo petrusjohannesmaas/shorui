@@ -13,11 +13,17 @@ function App() {
   const [viewMode, setViewMode] = useState<ViewMode>("split");
   const [theme, setTheme] = useState<Theme>("light");
   const [dirty, setDirty] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef(content);
   contentRef.current = content;
+
+  const showToast = useCallback((message: string) => {
+    setToast(message);
+    setTimeout(() => setToast(null), 2500);
+  }, []);
 
   useEffect(() => {
     const prefersDark = window.matchMedia(
@@ -103,6 +109,7 @@ function App() {
     if (filePath) {
       await writeTextFile(filePath, contentRef.current);
       setDirty(false);
+      showToast(filePath.split(/[/\\]/).pop() || filePath);
     } else {
       const selected = await save({
         filters: [
@@ -115,9 +122,10 @@ function App() {
         await writeTextFile(selected, contentRef.current);
         setFilePath(selected);
         setDirty(false);
+        showToast(selected.split(/[/\\]/).pop() || selected);
       }
     }
-  }, [filePath]);
+  }, [filePath, showToast]);
 
   const toggleTheme = useCallback(() => {
     setTheme((prev) => (prev === "light" ? "dark" : "light"));
@@ -222,6 +230,7 @@ function App() {
           </button>
         </div>
       </footer>
+      {toast && <div className="toast">{toast} saved successfully</div>}
     </div>
   );
 }
