@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useHotkeys } from "react-hotkeys-hook";
 import { marked } from "marked";
 import { open, save, ask } from "@tauri-apps/plugin-dialog";
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
@@ -52,6 +53,56 @@ function App() {
     setDirty(true);
   }, []);
 
+  const moveLine = useCallback(
+    (direction: "up" | "down") => {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const lines = content.split("\n");
+
+      let charCount = 0;
+      let startLine = 0;
+      let endLine = 0;
+
+      for (let i = 0; i < lines.length; i++) {
+        const lineLen = lines[i].length;
+        if (start >= charCount && start <= charCount + lineLen) startLine = i;
+        if (end >= charCount && end <= charCount + lineLen) {
+          endLine = i;
+          break;
+        }
+        charCount += lineLen + 1;
+      }
+
+      if (direction === "up" && startLine > 0) {
+        const aboveLen = lines[startLine - 1].length + 1;
+        const block = lines.splice(startLine, endLine - startLine + 1);
+        lines.splice(startLine - 1, 0, ...block);
+        setContent(lines.join("\n"));
+        setDirty(true);
+        requestAnimationFrame(() => {
+          textarea.selectionStart = start - aboveLen;
+          textarea.selectionEnd = end - aboveLen;
+        });
+      }
+
+      if (direction === "down" && endLine < lines.length - 1) {
+        const belowLen = lines[endLine + 1].length + 1;
+        const block = lines.splice(startLine, endLine - startLine + 1);
+        lines.splice(startLine + 1, 0, ...block);
+        setContent(lines.join("\n"));
+        setDirty(true);
+        requestAnimationFrame(() => {
+          textarea.selectionStart = start + belowLen;
+          textarea.selectionEnd = end + belowLen;
+        });
+      }
+    },
+    [content],
+  );
+
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === "Tab") {
@@ -68,9 +119,22 @@ function App() {
         requestAnimationFrame(() => {
           textarea.selectionStart = textarea.selectionEnd = start + 2;
         });
+        return;
+      }
+
+      if (e.altKey && e.key === "ArrowUp") {
+        e.preventDefault();
+        moveLine("up");
+        return;
+      }
+
+      if (e.altKey && e.key === "ArrowDown") {
+        e.preventDefault();
+        moveLine("down");
+        return;
       }
     },
-    [],
+    [moveLine],
   );
 
   const confirmIfDirty = useCallback(async (): Promise<boolean> => {
@@ -130,6 +194,38 @@ function App() {
   const toggleTheme = useCallback(() => {
     setTheme((prev) => (prev === "light" ? "dark" : "light"));
   }, []);
+
+  useHotkeys("alt+e", () => setViewMode("edit"), { enableOnFormTags: true }, [setViewMode]);
+  useHotkeys("alt+s", () => setViewMode("split"), { enableOnFormTags: true }, [setViewMode]);
+  useHotkeys("alt+p", () => setViewMode("preview"), { enableOnFormTags: true }, [setViewMode]);
+  useHotkeys("alt+t", toggleTheme, { enableOnFormTags: true }, [toggleTheme]);
+  useHotkeys(
+    "ctrl+s,meta+s",
+    (e) => {
+      e.preventDefault();
+      saveFile();
+    },
+    { preventDefault: true, enableOnFormTags: true },
+    [saveFile],
+  );
+  useHotkeys(
+    "ctrl+o,meta+o",
+    (e) => {
+      e.preventDefault();
+      openFile();
+    },
+    { preventDefault: true, enableOnFormTags: true },
+    [openFile],
+  );
+  useHotkeys(
+    "ctrl+n,meta+n",
+    (e) => {
+      e.preventDefault();
+      newFile();
+    },
+    { preventDefault: true, enableOnFormTags: true },
+    [newFile],
+  );
 
   const html = marked.parse(content) as string;
 
