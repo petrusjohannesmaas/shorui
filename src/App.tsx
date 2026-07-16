@@ -1,4 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { marked } from "marked";
 import { open, save, ask } from "@tauri-apps/plugin-dialog";
@@ -7,6 +14,15 @@ import { invoke } from "@tauri-apps/api/core";
 
 type ViewMode = "edit" | "split" | "preview";
 type Theme = "light" | "dark";
+
+interface Snapshot {
+  content: string;
+  start: number;
+  end: number;
+}
+
+const MAX_HISTORY = 500;
+const TYPING_COALESCE_MS = 1000;
 
 function App() {
   const [content, setContent] = useState("");
@@ -21,10 +37,19 @@ function App() {
   const contentRef = useRef(content);
   contentRef.current = content;
 
+  const undoStack = useRef<Snapshot[]>([]);
+  const redoStack = useRef<Snapshot[]>([]);
+  const lastPushTime = useRef(0);
+  const lastSelection = useRef({ start: 0, end: 0 });
+  const toastTimer = useRef<number | undefined>(undefined);
+
   const showToast = useCallback((message: string) => {
     setToast(message);
-    setTimeout(() => setToast(null), 2500);
+    window.clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(() => setToast(null), 2500);
   }, []);
+
+  useEffect(() => () => window.clearTimeout(toastTimer.current), []);
 
   useEffect(() => {
     const prefersDark = window.matchMedia(
@@ -33,25 +58,249 @@ function App() {
     setTheme(prefersDark ? "dark" : "light");
   }, []);
 
-  useEffect(() => {
-    invoke<string | null>("get_startup_file").then(async (path) => {
-      if (path) {
-        const text = await readTextFile(path);
-        setContent(text);
-        setFilePath(path);
-        setDirty(false);
-      }
-    });
+  const resetHistory = useCallback(() => {
+    undoStack.current = [];
+    redoStack.current = [];
+    lastPushTime.current = 0;
   }, []);
+
+  useEffect(() => {
+    invoke<string | null>("get_startup_file")
+      .then(async (path) => {
+        if (path) {
+          const text = await readTextFile(path);
+          setContent(text);
+          setFilePath(path);
+          setDirty(false);
+          resetHistory();
+        }
+      })
+      .catch(() => {});
+  }, [resetHistory]);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
 
-  const handleContentChange = useCallback((value: string) => {
-    setContent(value);
-    setDirty(true);
+  const pendingSelection = useRef<{ start: number; end: number } | null>(null);
+
+  // Applied after React commits a programmatic content change, so the
+  // caret/selection lands where the edit intended it.
+  useLayoutEffect(() => {
+    const sel = pendingSelection.current;
+    if (!sel) return;
+    pendingSelection.current = null;
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.focus();
+      textarea.setSelectionRange(sel.start, sel.end);
+      lastSelection.current = { start: sel.start, end: sel.end };
+    }
+  }, [content]);
+
+  const setSelection = useCallback((start: number, end: number) => {
+    pendingSelection.current = { start, end };
   }, []);
+
+  const pushUndo = useCallback((coalesce = false) => {
+    redoStack.current = [];
+    const now = Date.now();
+    if (
+      coalesce &&
+      undoStack.current.length > 0 &&
+      now - lastPushTime.current < TYPING_COALESCE_MS
+    ) {
+      return;
+    }
+    undoStack.current.push({
+      content: contentRef.current,
+      start: lastSelection.current.start,
+      end: lastSelection.current.end,
+    });
+    if (undoStack.current.length > MAX_HISTORY) undoStack.current.shift();
+    lastPushTime.current = now;
+  }, []);
+
+  const undo = useCallback(() => {
+    const snapshot = undoStack.current.pop();
+    if (!snapshot) return;
+    const textarea = textareaRef.current;
+    redoStack.current.push({
+      content: contentRef.current,
+      start: textarea?.selectionStart ?? 0,
+      end: textarea?.selectionEnd ?? 0,
+    });
+    setContent(snapshot.content);
+    setDirty(true);
+    lastPushTime.current = 0;
+    setSelection(snapshot.start, snapshot.end);
+  }, [setSelection]);
+
+  const redo = useCallback(() => {
+    const snapshot = redoStack.current.pop();
+    if (!snapshot) return;
+    const textarea = textareaRef.current;
+    undoStack.current.push({
+      content: contentRef.current,
+      start: textarea?.selectionStart ?? 0,
+      end: textarea?.selectionEnd ?? 0,
+    });
+    setContent(snapshot.content);
+    setDirty(true);
+    lastPushTime.current = 0;
+    setSelection(snapshot.start, snapshot.end);
+  }, [setSelection]);
+
+  const applyEdit = useCallback(
+    (newContent: string, selStart: number, selEnd: number) => {
+      pushUndo();
+      lastPushTime.current = 0;
+      setContent(newContent);
+      setDirty(true);
+      setSelection(selStart, selEnd);
+    },
+    [pushUndo, setSelection],
+  );
+
+  const handleContentChange = useCallback(
+    (value: string) => {
+      pushUndo(true);
+      setContent(value);
+      setDirty(true);
+    },
+    [pushUndo],
+  );
+
+  const toggleInline = useCallback(
+    (marker: string) => {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+      const text = contentRef.current;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const selected = text.slice(start, end);
+      const len = marker.length;
+
+      // Selection includes the markers: strip them
+      if (
+        selected.length >= 2 * len &&
+        selected.startsWith(marker) &&
+        selected.endsWith(marker)
+      ) {
+        const inner = selected.slice(len, selected.length - len);
+        applyEdit(
+          text.slice(0, start) + inner + text.slice(end),
+          start,
+          start + inner.length,
+        );
+        return;
+      }
+
+      // Markers directly surround the selection: strip them
+      if (
+        text.slice(start - len, start) === marker &&
+        text.slice(end, end + len) === marker
+      ) {
+        applyEdit(
+          text.slice(0, start - len) + selected + text.slice(end + len),
+          start - len,
+          start - len + selected.length,
+        );
+        return;
+      }
+
+      const inner = selected || "text";
+      applyEdit(
+        text.slice(0, start) + marker + inner + marker + text.slice(end),
+        start + len,
+        start + len + inner.length,
+      );
+    },
+    [applyEdit],
+  );
+
+  const cycleHeading = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const text = contentRef.current;
+    const start = textarea.selectionStart;
+    const lineStart = text.lastIndexOf("\n", start - 1) + 1;
+    let lineEnd = text.indexOf("\n", start);
+    if (lineEnd === -1) lineEnd = text.length;
+    const line = text.slice(lineStart, lineEnd);
+
+    const match = line.match(/^(#{1,6})\s/);
+    let newLine: string;
+    if (!match) {
+      newLine = "# " + line;
+    } else if (match[1].length < 6) {
+      newLine = "#" + line;
+    } else {
+      newLine = line.replace(/^#{6}\s/, "");
+    }
+
+    const delta = newLine.length - line.length;
+    applyEdit(
+      text.slice(0, lineStart) + newLine + text.slice(lineEnd),
+      Math.max(lineStart, start + delta),
+      Math.max(lineStart, textarea.selectionEnd + delta),
+    );
+  }, [applyEdit]);
+
+  const cycleList = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const text = contentRef.current;
+    const blockStart = text.lastIndexOf("\n", textarea.selectionStart - 1) + 1;
+    let blockEnd = text.indexOf("\n", textarea.selectionEnd);
+    if (blockEnd === -1) blockEnd = text.length;
+
+    const bullet = /^(\s*)[-*]\s+/;
+    const numbered = /^(\s*)\d+\.\s+/;
+    const lines = text.slice(blockStart, blockEnd).split("\n");
+    const first = lines.find((l) => l.trim() !== "") ?? "";
+
+    // Cycle: plain -> bullet -> numbered -> plain
+    const target = bullet.test(first)
+      ? "numbered"
+      : numbered.test(first)
+        ? "plain"
+        : "bullet";
+
+    let counter = 1;
+    const newBlock = lines
+      .map((line) => {
+        if (line.trim() === "") return line;
+        const stripped = line.replace(bullet, "$1").replace(numbered, "$1");
+        if (target === "bullet") return stripped.replace(/^(\s*)/, "$1- ");
+        if (target === "numbered")
+          return stripped.replace(/^(\s*)/, `$1${counter++}. `);
+        return stripped;
+      })
+      .join("\n");
+
+    applyEdit(
+      text.slice(0, blockStart) + newBlock + text.slice(blockEnd),
+      blockStart,
+      blockStart + newBlock.length,
+    );
+  }, [applyEdit]);
+
+  const insertLink = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const text = contentRef.current;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const label = text.slice(start, end) || "link text";
+    const snippet = `[${label}](url)`;
+    const urlStart = start + label.length + 3;
+    applyEdit(
+      text.slice(0, start) + snippet + text.slice(end),
+      urlStart,
+      urlStart + 3,
+    );
+  }, [applyEdit]);
 
   const moveLine = useCallback(
     (direction: "up" | "down") => {
@@ -60,7 +309,7 @@ function App() {
 
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
-      const lines = content.split("\n");
+      const lines = contentRef.current.split("\n");
 
       let charCount = 0;
       let startLine = 0;
@@ -80,45 +329,79 @@ function App() {
         const aboveLen = lines[startLine - 1].length + 1;
         const block = lines.splice(startLine, endLine - startLine + 1);
         lines.splice(startLine - 1, 0, ...block);
-        setContent(lines.join("\n"));
-        setDirty(true);
-        requestAnimationFrame(() => {
-          textarea.selectionStart = start - aboveLen;
-          textarea.selectionEnd = end - aboveLen;
-        });
+        applyEdit(lines.join("\n"), start - aboveLen, end - aboveLen);
       }
 
       if (direction === "down" && endLine < lines.length - 1) {
         const belowLen = lines[endLine + 1].length + 1;
         const block = lines.splice(startLine, endLine - startLine + 1);
         lines.splice(startLine + 1, 0, ...block);
-        setContent(lines.join("\n"));
-        setDirty(true);
-        requestAnimationFrame(() => {
-          textarea.selectionStart = start + belowLen;
-          textarea.selectionEnd = end + belowLen;
-        });
+        applyEdit(lines.join("\n"), start + belowLen, end + belowLen);
       }
     },
-    [content],
+    [applyEdit],
   );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      const mod = e.ctrlKey || e.metaKey;
+
+      if (mod && !e.altKey) {
+        const key = e.key.toLowerCase();
+        if (key === "z" && !e.shiftKey) {
+          e.preventDefault();
+          undo();
+          return;
+        }
+        if ((key === "z" && e.shiftKey) || key === "y") {
+          e.preventDefault();
+          redo();
+          return;
+        }
+        if (key === "b") {
+          e.preventDefault();
+          toggleInline("**");
+          return;
+        }
+        if (key === "i") {
+          e.preventDefault();
+          toggleInline("*");
+          return;
+        }
+        if (key === "c" && e.shiftKey) {
+          e.preventDefault();
+          toggleInline("`");
+          return;
+        }
+        if (key === "h") {
+          e.preventDefault();
+          cycleHeading();
+          return;
+        }
+        if (key === "l") {
+          e.preventDefault();
+          cycleList();
+          return;
+        }
+        if (key === "k") {
+          e.preventDefault();
+          insertLink();
+          return;
+        }
+      }
+
       if (e.key === "Tab") {
         e.preventDefault();
         const textarea = e.currentTarget;
         const start = textarea.selectionStart;
         const end = textarea.selectionEnd;
-        const newValue =
+        applyEdit(
           textarea.value.substring(0, start) +
-          "  " +
-          textarea.value.substring(end);
-        setContent(newValue);
-        setDirty(true);
-        requestAnimationFrame(() => {
-          textarea.selectionStart = textarea.selectionEnd = start + 2;
-        });
+            "  " +
+            textarea.value.substring(end),
+          start + 2,
+          start + 2,
+        );
         return;
       }
 
@@ -134,7 +417,18 @@ function App() {
         return;
       }
     },
-    [moveLine],
+    [undo, redo, toggleInline, cycleHeading, cycleList, insertLink, applyEdit, moveLine],
+  );
+
+  const handleSelect = useCallback(
+    (e: React.SyntheticEvent<HTMLTextAreaElement>) => {
+      const textarea = e.currentTarget;
+      lastSelection.current = {
+        start: textarea.selectionStart,
+        end: textarea.selectionEnd,
+      };
+    },
+    [],
   );
 
   const confirmIfDirty = useCallback(async (): Promise<boolean> => {
@@ -152,7 +446,8 @@ function App() {
     setContent("");
     setFilePath(null);
     setDirty(false);
-  }, [confirmIfDirty]);
+    resetHistory();
+  }, [confirmIfDirty, resetHistory]);
 
   const openFile = useCallback(async () => {
     const proceed = await confirmIfDirty();
@@ -166,8 +461,9 @@ function App() {
       setContent(text);
       setFilePath(selected);
       setDirty(false);
+      resetHistory();
     }
-  }, [confirmIfDirty]);
+  }, [confirmIfDirty, resetHistory]);
 
   const saveFile = useCallback(async () => {
     if (filePath) {
@@ -227,7 +523,7 @@ function App() {
     [newFile],
   );
 
-  const html = marked.parse(content) as string;
+  const html = useMemo(() => marked.parse(content) as string, [content]);
 
   useEffect(() => {
     if (!previewRef.current) return;
@@ -268,6 +564,7 @@ function App() {
               value={content}
               onChange={(e) => handleContentChange(e.target.value)}
               onKeyDown={handleKeyDown}
+              onSelect={handleSelect}
               placeholder="Start typing markdown..."
               spellCheck={false}
             />
@@ -322,7 +619,7 @@ function App() {
             onClick={toggleTheme}
             title="Toggle theme"
           >
-            {theme === "light" ? "\u263E" : "\u2600"}
+            {theme === "light" ? "☾" : "☀"}
           </button>
         </div>
       </footer>
