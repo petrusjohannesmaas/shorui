@@ -1,0 +1,12 @@
+# Virtualenvs
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Never commit generated PDFs or the plaintext notes behind them —
+# they are the whole reason this tool exists.
+*.pdf
+*.md
+!README.md
+!sample.md
