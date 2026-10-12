@@ -4,8 +4,9 @@ A minimal markdown editor built with Tauri v2, React, and TypeScript.
 
 ## Features
 
-- **Three view modes** — Edit only, Split (side-by-side), Preview only
-- **Live preview** — renders markdown as you type
+- **Rich editor (default)** — headings, emphasis, links, lists, quotes and code blocks render in place; markers reappear around the cursor
+- **Code mode** — the same editor with the raw markdown showing
+- **Lossless** — the text is never re-serialised, so a save writes exactly what you typed
 - **Light/Dark theme** — follows system preference by default, toggleable
 - **File support** — open and save `.md` and `.txt` files
 - **Unsaved changes** — prompts before discarding unsaved work
@@ -30,8 +31,8 @@ A minimal markdown editor built with Tauri v2, React, and TypeScript.
 | `Ctrl/Cmd + L` | Cycle list (bullet → numbered → none) |
 | `Ctrl/Cmd + K` | Insert link |
 | `Alt + ↑ / ↓` | Move line(s) up / down |
-| `Tab` | Insert two spaces |
-| `Alt + E / S / P` | Edit / Split / Preview mode |
+| `Tab` / `Shift + Tab` | Indent / outdent |
+| `Alt + M` | Switch between rich editor and code mode |
 | `Alt + T` | Toggle theme |
 
 ## Tech Stack
@@ -39,7 +40,7 @@ A minimal markdown editor built with Tauri v2, React, and TypeScript.
 - [Tauri v2](https://v2.tauri.app/) — Rust backend, native dialogs and filesystem access
 - [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) — frontend UI
 - [Vite](https://vitejs.dev/) — build tool and dev server
-- [marked](https://marked.js.org/) — markdown parsing
+- [CodeMirror 6](https://codemirror.net/) — editor, with a live-preview extension in `src/livePreview.ts`
 
 ## Prerequisites
 
@@ -67,7 +68,7 @@ The output will be in `src-tauri/target/release/bundle/deb/`.
 ### Install the `.deb`
 
 ```bash
-sudo dpkg -i src-tauri/target/release/bundle/deb/shorui_0.1.0_amd64.deb
+sudo dpkg -i src-tauri/target/release/bundle/deb/Shorui_0.2.0_amd64.deb
 ```
 
 ## License
