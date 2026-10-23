@@ -4,16 +4,16 @@ A minimal markdown editor built with Tauri v2, Svelte 5, and TypeScript.
 
 ## Features
 
-- **Rich editor (default)** — headings, emphasis, links, lists, quotes and code blocks render in place; markers reappear around the cursor
-- **Code mode** — the same editor with the raw markdown showing
-- **Lossless** — the text is never re-serialised, so a save writes exactly what you typed
-- **Light and Dark theme** — starts in Dark. Settings holds the theme (Light or Dark) and the nine accent colours, saved across restarts
-- **File support** — open and save `.md` and `.txt` files
-- **Unsaved changes** — prompts before discarding unsaved work
-- **Toast notifications** — confirms successful saves
-- **Code block copy buttons** — one-click copy for fenced code blocks
-- **Undo / redo** — full editing history with the standard keybinds
-- **Markdown shortcuts** — bold, italic, headings, code, lists, and links from the keyboard
+- **Rich editor (default).** Headings, emphasis, links, lists, quotes and code blocks render in place; markers reappear around the cursor
+- **Code mode.** The same editor with the raw markdown showing
+- **Lossless.** The text is never re-serialised, so a save writes exactly what you typed
+- **Light and Dark theme.** Starts in Dark. Settings holds the theme (Light or Dark) and the nine accent colours, saved across restarts
+- **File support.** Open and save `.md` and `.txt` files
+- **Unsaved changes.** Prompts before discarding unsaved work
+- **Toast notifications.** Confirms a successful save, and reports a failed save or open ("Could not save <name>", "Could not open <name>")
+- **Code block copy buttons.** One-click copy for fenced code blocks
+- **Undo / redo.** Full editing history with the standard keybinds
+- **Markdown shortcuts.** Bold, italic, headings, code, lists, and links from the keyboard
 
 ## Keyboard Shortcuts
 
@@ -48,7 +48,7 @@ A minimal markdown editor built with Tauri v2, Svelte 5, and TypeScript.
 ## Prerequisites
 
 - [Rust](https://www.rust-lang.org/tools/install)
-- [Node.js](https://nodejs.org/) (v18+)
+- [Node.js](https://nodejs.org/) (22.22.2 or later)
 - System dependencies for Tauri (Linux): `libwebkit2gtk-4.1-dev`, `libssl-dev`, `libgtk-3-dev`, `libayatana-appindicator3-dev`
 
 ## Development
@@ -91,4 +91,4 @@ sudo dpkg -i src-tauri/target/release/bundle/deb/Shorui_0.2.0_amd64.deb
 
 ## License
 
-GPLv3 — see [LICENSE](LICENSE) for details.
+GPLv3. See [LICENSE](LICENSE) for details.
