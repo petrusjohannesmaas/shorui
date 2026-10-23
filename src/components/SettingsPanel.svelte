@@ -1,16 +1,10 @@
 <script lang="ts">
   import Check from '@lucide/svelte/icons/check';
   import { Button } from '$lib/components/ui/button/index.js';
-  import { accents, type AccentId } from '$lib/accents';
+  import { accents } from '$lib/accents';
   import { settings } from '$lib/settings.svelte';
   import { screenTransition } from '$lib/motion';
-  import { themes, type ThemeId } from '../themes';
-
-  // The change shows at once. A failed save only means it won't survive a
-  // restart, so it is logged rather than undone.
-  const logFailure = (error: unknown) => console.error('Could not save settings', error);
-  const chooseTheme = (id: ThemeId) => settings.setTheme(id).catch(logFailure);
-  const chooseAccent = (id: AccentId) => settings.setAccent(id).catch(logFailure);
+  import { themes } from '../themes';
 </script>
 
 <section
@@ -30,7 +24,7 @@
             variant={chosen ? 'default' : 'ghost'}
             aria-pressed={chosen}
             class="px-5"
-            onclick={() => chooseTheme(theme.id)}
+            onclick={() => settings.setTheme(theme.id)}
           >
             {theme.name}
           </Button>
@@ -51,7 +45,7 @@
             title={accent.name}
             class={['rounded-full', chosen && 'ring-2 ring-foreground ring-offset-2 ring-offset-background']}
             style="background-color: {accent.hex}"
-            onclick={() => chooseAccent(accent.id)}
+            onclick={() => settings.setAccent(accent.id)}
           >
             {#if chosen}
               <Check aria-hidden="true" class="size-5 text-white" />

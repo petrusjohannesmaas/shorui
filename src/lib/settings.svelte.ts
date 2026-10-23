@@ -15,16 +15,17 @@ function apply() {
 
 // Saves run one after another. Otherwise two quick changes interleave their
 // store writes, and an earlier save can capture a later change half-written.
+// A failed save is logged here, once, and the chain carries on, so no caller
+// has to catch it. The change still shows, but it won't survive a restart.
 let saving: Promise<void> = Promise.resolve();
 
 function save() {
   const values = { theme, accent };
-  // A failed save still has to let the next one through, but the failure
-  // itself is reported rather than dropped.
-  saving = saving.catch((error: unknown) => {
-    console.error('Could not save settings', error);
-  });
-  saving = saving.then(() => saveSettings(values));
+  saving = saving.then(() =>
+    saveSettings(values).catch((error: unknown) => {
+      console.error('Could not save settings', error);
+    }),
+  );
   return saving;
 }
 

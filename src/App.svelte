@@ -68,9 +68,7 @@
       event.key.toLowerCase() === 't'
     ) {
       event.preventDefault();
-      void settings.toggleTheme().catch((error: unknown) =>
-        console.error('Could not save settings', error),
-      );
+      void settings.toggleTheme();
       return;
     }
     // The editor's shortcuts need the editor in front. Settings closes with
@@ -199,6 +197,7 @@
           <TooltipTrigger
             aria-label="New"
             class={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}
+            disabled={settingsOpen}
             onclick={newFile}
           >
             <FilePlus class="size-4" aria-hidden="true" />
@@ -211,6 +210,7 @@
           <TooltipTrigger
             aria-label="Open"
             class={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}
+            disabled={settingsOpen}
             onclick={openFile}
           >
             <FolderOpen class="size-4" aria-hidden="true" />
@@ -223,6 +223,7 @@
           <TooltipTrigger
             aria-label="Save"
             class={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}
+            disabled={settingsOpen}
             onclick={saveFile}
           >
             <Save class="size-4" aria-hidden="true" />
@@ -255,6 +256,7 @@
             aria-label="Rich"
             aria-pressed={mode === 'rich'}
             class={cn(buttonVariants({ variant: mode === 'rich' ? 'default' : 'ghost', size: 'sm' }))}
+            disabled={settingsOpen}
             onclick={() => setMode('rich')}
           >
             <PenLine class="size-4" aria-hidden="true" />
@@ -268,6 +270,7 @@
             aria-label="Code"
             aria-pressed={mode === 'code'}
             class={cn(buttonVariants({ variant: mode === 'code' ? 'default' : 'ghost', size: 'sm' }))}
+            disabled={settingsOpen}
             onclick={() => setMode('code')}
           >
             <Code class="size-4" aria-hidden="true" />

@@ -8,6 +8,7 @@ const root = document.documentElement;
 const accentVar = () => root.style.getPropertyValue('--accent-bg');
 
 beforeEach(async () => {
+  vi.restoreAllMocks();
   vi.resetModules();
   ({ settings } = await import('./settings.svelte'));
   root.removeAttribute('data-theme');
@@ -37,5 +38,21 @@ describe('settings', () => {
     await settings.toggleTheme();
     expect(settings.theme).toBe('dark');
     expect(store.saves.at(-1)).toEqual({ theme: 'dark', accent: 'blue' });
+  });
+
+  it('a failed save is logged once and the next save still runs', async () => {
+    const store = fakeStore({}, undefined, { failSaves: 1 });
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    await settings.load();
+
+    await expect(settings.setTheme('light')).resolves.toBeUndefined();
+
+    expect(logged).toHaveBeenCalledTimes(1);
+    expect(logged.mock.calls[0][0]).toBe('Could not save settings');
+
+    await settings.setAccent('teal');
+
+    expect(store.saves.at(-1)).toEqual({ theme: 'light', accent: 'teal' });
+    expect(logged).toHaveBeenCalledTimes(1);
   });
 });

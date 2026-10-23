@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { tick } from 'svelte';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { mockIPC } from '@tauri-apps/api/mocks';
 import App from './App.svelte';
@@ -174,7 +175,9 @@ describe('the settings panel', () => {
 
   it('file and mode keys wait while Settings is open', async () => {
     const calls = fakeBackend();
-    render(App);
+    const { container } = render(App);
+    // Unsaved text, so a New or Open that got through would show the prompt.
+    await type(container, 'x');
 
     await fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
     await screen.findByTestId('settings-panel');
@@ -188,11 +191,26 @@ describe('the settings panel', () => {
     await fireEvent.keyDown(window, { key: 's', ctrlKey: true });
     await fireEvent.keyDown(window, { key: 'm', altKey: true });
 
+    // The header's buttons do the same things as the keys, so they wait too.
+    // jsdom lets fireEvent.click reach a handler through a disabled button,
+    // which a browser does not, so the click is the button's own click().
+    for (const name of ['New', 'Open', 'Save', 'Rich', 'Code']) {
+      const button = screen.getByRole('button', { name }) as HTMLButtonElement;
+      expect(button.disabled, `${name} is disabled`).toBe(true);
+      button.click();
+    }
+    await tick();
+
+    expect(screen.queryByText('You have unsaved changes. Continue without saving?')).toBeNull();
     expect(calls.length).toBe(before);
     expect(callsTo(calls, 'plugin:dialog|open')).toHaveLength(0);
     expect(callsTo(calls, 'plugin:dialog|save')).toHaveLength(0);
     expect(callsTo(calls, 'plugin:fs|write_text_file')).toHaveLength(0);
     expect(screen.getByRole('button', { name: 'Rich' }).getAttribute('aria-pressed')).toBe('true');
     expect(screen.getByRole('button', { name: 'Code' }).getAttribute('aria-pressed')).toBe('false');
+    expect(fileName()).toBe('Untitled');
+
+    // Back and Settings are the header's way out, so they stay enabled.
+    expect((screen.getByRole('button', { name: 'Back' }) as HTMLButtonElement).disabled).toBe(false);
   });
 });

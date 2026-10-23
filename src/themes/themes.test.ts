@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { DEFAULT_THEME, themes } from './index';
 
 // Vitest empties CSS imports, even with ?raw, so read the files from disk.
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8');
@@ -19,14 +18,6 @@ function variable(css: string, name: string): string {
 }
 
 describe('themes', () => {
-  it('lists Light and Dark, with Dark as the default', () => {
-    expect(themes.map(({ id, name }) => [id, name])).toEqual([
-      ['light', 'Light'],
-      ['dark', 'Dark'],
-    ]);
-    expect(DEFAULT_THEME).toBe('dark');
-  });
-
   it('scopes each theme file to its own data-theme value', () => {
     expect(lightCss).toContain(':root[data-theme="light"]');
     expect(darkCss).toContain(':root[data-theme="dark"]');

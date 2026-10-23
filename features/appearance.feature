@@ -59,7 +59,9 @@ Feature: Appearance
     And the heading uses the foreground colour
 
   Scenario: Editor fonts
-    Given a markdown file "fonts.md" with a heading
+    Given a markdown file "fonts.md" with a heading, a fenced code block and inline code
     Then the rich editor's font is "Geist Variable"
+    And the fenced code line "const answer = 42;" is in "Geist Mono Variable"
+    And the inline code "inline_snippet" is in "Geist Mono Variable"
     When I click the Code button
     Then the code editor's font is "Geist Mono Variable"

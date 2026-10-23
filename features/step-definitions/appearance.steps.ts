@@ -142,9 +142,13 @@ Given('a markdown file {string} with a link, a blockquote and a heading', async 
   await startApp([writeNote(name, text)]);
 });
 
-Given('a markdown file {string} with a heading', async (name: string) => {
-  await startApp([writeNote(name, '# Heading\n\nBody\n')]);
-});
+Given(
+  'a markdown file {string} with a heading, a fenced code block and inline code',
+  async (name: string) => {
+    const text = '# Heading\n\nBody with `inline_snippet` in it\n\n```\nconst answer = 42;\n```\n';
+    await startApp([writeNote(name, text)]);
+  },
+);
 
 Given('the editor is scrolled to line 150', async () => {
   const scrollTop = await browser.execute(() => {
@@ -389,6 +393,37 @@ Then("the code editor's font is {string}", async (family: string) => {
   const actual = await styleOf('.cm-editor:not(.cm-rich) .cm-scroller', 'font-family');
   if (!firstFamily(actual).startsWith(family)) {
     throw new Error(`The code editor's font is ${actual}, not ${family}`);
+  }
+});
+
+// The font the webview draws a piece of text in: the computed font of the
+// element that directly holds the text, which is the one the glyphs come from.
+async function fontOfText(text: string): Promise<string> {
+  return browser.execute((wanted) => {
+    const walker = document.createTreeWalker(
+      document.querySelector('.cm-content') as HTMLElement,
+      NodeFilter.SHOW_TEXT,
+    );
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      if (node.textContent?.includes(wanted) && node.parentElement) {
+        return getComputedStyle(node.parentElement).fontFamily;
+      }
+    }
+    throw new Error(`No text "${wanted}" in the editor`);
+  }, text);
+}
+
+Then('the fenced code line {string} is in {string}', async (text: string, family: string) => {
+  const actual = await fontOfText(text);
+  if (!firstFamily(actual).startsWith(family)) {
+    throw new Error(`The fenced code line "${text}" is in ${actual}, not ${family}`);
+  }
+});
+
+Then('the inline code {string} is in {string}', async (text: string, family: string) => {
+  const actual = await fontOfText(text);
+  if (!firstFamily(actual).startsWith(family)) {
+    throw new Error(`The inline code "${text}" is in ${actual}, not ${family}`);
   }
 });
 
