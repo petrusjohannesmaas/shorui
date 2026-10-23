@@ -35,6 +35,16 @@ if (!globalThis.ResizeObserver) {
   };
 }
 
+// jsdom has no layout, so a Range has no client rects. CodeMirror measures the
+// text with them after the editor's content changes.
+if (!Range.prototype.getClientRects) {
+  Range.prototype.getClientRects = () =>
+    Object.assign([], { item: () => null }) as unknown as DOMRectList;
+}
+if (!Range.prototype.getBoundingClientRect) {
+  Range.prototype.getBoundingClientRect = () => new DOMRect();
+}
+
 // jsdom has no Web Animations API, which Svelte transitions use. Svelte waits
 // for onfinish, so the stub finishes each animation on the next task.
 if (!Element.prototype.animate) {
