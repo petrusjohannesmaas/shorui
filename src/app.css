@@ -1,0 +1,302 @@
+/* Scan src/ only, so Tailwind skips the Rust sources and the built output. */
+@import 'tailwindcss' source('./');
+@import 'tw-animate-css';
+
+/* The theme is a data-theme attribute on <html>, set by lib/settings. The dark
+   variant follows it, so the app needs no second theme class. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root {
+  color-scheme: dark;
+  --radius: 0.625rem;
+  /* The settings code replaces these when the saved accent loads. Until then,
+     Dark and Blue match index.html and the default theme. */
+  --accent-bg: #3584e4;
+  --primary-foreground: #ffffff;
+
+  /* The colour names livePreview.ts reads. */
+  --text-secondary: var(--muted-foreground);
+  --preview-link: var(--accent-text);
+  --preview-blockquote-text: var(--muted-foreground);
+}
+
+@theme inline {
+  --font-sans: 'Geist Variable', system-ui, sans-serif;
+  --font-mono: 'Geist Mono Variable', ui-monospace, SFMono-Regular, monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-accent-text: var(--accent-text);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html,
+  body,
+  #app {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Unlayered, so a component's outline-none cannot hide it. Every control that
+   takes focus, including the shadcn buttons, shows the accent ring. */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* The editor */
+
+.editor-host {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.editor-host .cm-editor {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  background: transparent;
+  color: var(--foreground);
+}
+
+.cm-editor.cm-focused {
+  outline: none;
+}
+
+.cm-editor .cm-scroller {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.6;
+  overflow: auto;
+}
+
+.cm-editor .cm-content {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px 20px;
+  caret-color: var(--accent-text);
+}
+
+.cm-editor .cm-placeholder {
+  color: var(--muted-foreground);
+}
+
+.cm-editor .cm-cursor,
+.cm-editor .cm-dropCursor {
+  border-left-color: var(--accent-text);
+}
+
+.cm-editor .cm-selectionLayer .cm-selectionBackground,
+.cm-editor.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground {
+  background: color-mix(in oklab, var(--accent-bg) 30%, transparent);
+}
+
+/* Rich mode */
+
+.cm-editor.cm-rich .cm-scroller {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.cm-rich .cm-h {
+  color: var(--foreground);
+  line-height: 1.3;
+  padding-top: 0.6em;
+  padding-bottom: 0.2em;
+}
+
+.cm-rich .cm-h1 {
+  font-size: 1.8em;
+  border-bottom: 1px solid var(--border);
+}
+
+.cm-rich .cm-h2 {
+  font-size: 1.5em;
+  border-bottom: 1px solid var(--border);
+}
+
+.cm-rich .cm-h3 {
+  font-size: 1.25em;
+}
+
+.cm-rich .cm-h4 {
+  font-size: 1.1em;
+}
+
+.cm-rich .cm-quote {
+  border-left: 4px solid var(--accent-bg);
+  background: var(--muted);
+  color: var(--muted-foreground);
+  padding-left: 1em;
+}
+
+.cm-rich .cm-inline-code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.cm-rich .cm-codeblock {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.5;
+  background: var(--muted);
+  padding: 0 16px;
+}
+
+.cm-rich .cm-codeblock-first {
+  position: relative;
+  padding-top: 8px;
+  border-radius: 6px 6px 0 0;
+}
+
+.cm-rich .cm-codeblock-last {
+  padding-bottom: 8px;
+  border-radius: 0 0 6px 6px;
+}
+
+.cm-rich .cm-codeblock-first.cm-codeblock-last {
+  border-radius: 6px;
+}
+
+.cm-rich .cm-fence-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.cm-rich .cm-bullet,
+.cm-rich .cm-list-num {
+  color: var(--muted-foreground);
+}
+
+.cm-rich .cm-hr {
+  border-bottom: 1px solid var(--border);
+  margin: 0.8em 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--background);
+  color: var(--muted-foreground);
+  font-size: 11px;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  line-height: 1.5;
+  transition: background 0.15s, color 0.15s;
+}
+
+.copy-btn:hover {
+  background: var(--accent-bg);
+  color: var(--primary-foreground);
+  border-color: var(--accent-bg);
+}
+
+.cm-rich .cm-table-line {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  background: var(--muted);
+  padding: 0 16px;
+}
+
+.cm-table-wrap {
+  overflow-x: auto;
+  margin: 0.6em 0;
+  cursor: text;
+}
+
+.cm-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.cm-table th,
+.cm-table td {
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  line-height: 1.5;
+}
+
+.cm-table th {
+  background: var(--muted);
+  font-weight: 600;
+}
+
+.cm-table tbody tr:nth-child(even) {
+  background: var(--muted);
+}
+
+.cm-table code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--background);
+}
+
+.cm-table-link {
+  color: var(--accent-text);
+}
+
+.cm-scroller::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.cm-scroller::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cm-scroller::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.cm-scroller::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
