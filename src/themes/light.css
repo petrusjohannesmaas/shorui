@@ -1,0 +1,28 @@
+/* Light theme. shadcn-svelte's colour names live on the theme's own
+   data-theme value, so the settings code never swaps a class. */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --background: #fafafb;
+  --foreground: #1c1c1f;
+  --card: #ffffff;
+  --card-foreground: #1c1c1f;
+  --popover: #ffffff;
+  --popover-foreground: #1c1c1f;
+  --primary: var(--accent-bg);
+  --primary-foreground: #ffffff;
+  --secondary: #ebebed;
+  --secondary-foreground: #1c1c1f;
+  --muted: #f1f1f3;
+  --muted-foreground: #5f6066;
+  --accent: #ebebed;
+  --accent-foreground: #1c1c1f;
+  --destructive: #b91c1c;
+  --border: rgb(0 0 6 / 12%);
+  --input: rgb(0 0 6 / 15%);
+  --ring: var(--accent-bg);
+
+  /* Accent text and icons. The clamp keeps every accent readable without
+     changing the accent the user picked for buttons and focus rings. */
+  --accent-text: oklab(from var(--accent-bg) min(l, 0.5) a b);
+}

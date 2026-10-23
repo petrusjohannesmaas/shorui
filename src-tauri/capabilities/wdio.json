@@ -1,0 +1,14 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "wdio",
+  "description": "test plugin permissions, the exit a relaunched app needs, and read and write access to the run's temporary folder, added only to e2e builds",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "wdio:default",
+    "wdio-webdriver:default",
+    "core:app:allow-exit",
+    "fs:scope-temp-recursive"
+  ]
+}
