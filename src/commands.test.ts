@@ -48,8 +48,6 @@ describe('markdown commands', () => {
   });
 
   it('inserts a link around the selection', () => {
-    // Today's command writes the url placeholder with the link, and selects
-    // the placeholder so typing replaces it.
     expect(run(insertLink, 'site', 0, 4).text).toBe('[site](url)');
   });
 });

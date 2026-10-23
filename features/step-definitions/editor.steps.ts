@@ -1,27 +1,5 @@
 import { Given, Then, When } from '@wdio/cucumber-framework';
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { closeApp, launchApp } from './app';
-
-// The files a scenario opens live in the run's temporary folder, which
-// wdio.conf.ts creates. The wdio capability lets the app read them.
-const folder = () => process.env.SHORUI_E2E_DIR!;
-
-// Closes whatever app is open, then starts a fresh one with the arguments the
-// scenario needs. The service started one before the first scenario, so a
-// given always closes before it launches.
-async function startApp(args: string[] = []) {
-  await closeApp();
-  await launchApp(args);
-  await $('.cm-content').waitForExist({ timeout: 20_000 });
-}
-
-function writeNote(name: string, text: string): string {
-  mkdirSync(folder(), { recursive: true });
-  const path = join(folder(), name);
-  writeFileSync(path, text);
-  return path;
-}
+import { startApp, writeNote } from './app';
 
 const editorText = () =>
   browser.execute(() => document.querySelector('.cm-content')?.textContent ?? '');

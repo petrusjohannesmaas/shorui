@@ -1,24 +1,7 @@
 import { Given, Then, When } from '@wdio/cucumber-framework';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { closeApp, launchApp } from './app';
-
-// The files a scenario opens live in the run's temporary folder, which
-// wdio.conf.ts creates.
-const folder = () => process.env.SHORUI_E2E_DIR!;
-
-async function startApp(args: string[] = []) {
-  await closeApp();
-  await launchApp(args);
-  await $('.cm-content').waitForExist({ timeout: 20_000 });
-}
-
-function writeNote(name: string, text: string): string {
-  mkdirSync(folder(), { recursive: true });
-  const path = join(folder(), name);
-  writeFileSync(path, text);
-  return path;
-}
+import { folder, startApp, writeNote } from './app';
 
 async function waitFor(check: () => Promise<boolean>, what: string) {
   await browser.waitUntil(check, {

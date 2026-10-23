@@ -1,28 +1,9 @@
 import { Given, Then, When } from '@wdio/cucumber-framework';
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { closeApp, launchApp } from './app';
-
-// The files a scenario opens live in the run's temporary folder, which
-// wdio.conf.ts creates.
-const folder = () => process.env.SHORUI_E2E_DIR!;
+import { startApp, writeNote } from './app';
 
 const PANEL = '[data-testid="settings-panel"]';
 const THEMES = '[role="group"][aria-labelledby="theme-label"]';
 const ACCENTS = '[role="group"][aria-labelledby="accent-label"]';
-
-async function startApp(args: string[] = []) {
-  await closeApp();
-  await launchApp(args);
-  await $('.cm-content').waitForExist({ timeout: 20_000 });
-}
-
-function writeNote(name: string, text: string): string {
-  mkdirSync(folder(), { recursive: true });
-  const path = join(folder(), name);
-  writeFileSync(path, text);
-  return path;
-}
 
 async function openSettings() {
   await $('button[aria-label="Settings"]').click();
@@ -174,8 +155,6 @@ Given('the editor is scrolled to line 150', async () => {
     return scroller.scrollTop;
   });
   if (scrollTop <= 0) throw new Error('The editor did not scroll to line 150');
-  // CodeMirror draws the lines the scroll reveals on the next frame.
-  await browser.pause(200);
 });
 
 Given('the cursor is on line 150', async () => {

@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { appendFileSync, openSync } from 'node:fs';
+import { appendFileSync, mkdirSync, openSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -78,4 +78,24 @@ export async function closeApp() {
     // The session went away first, which is fine once the app has closed.
   }
   await waitForAppToClose(15_000);
+}
+
+// Closes whatever app is open, then starts a fresh one with the arguments the
+// scenario needs. The service started one before the first scenario, so a
+// given always closes before it launches.
+export async function startApp(args: string[] = []) {
+  await closeApp();
+  await launchApp(args);
+  await $('.cm-content').waitForExist({ timeout: 20_000 });
+}
+
+// The files a scenario opens live in the run's temporary folder, which
+// wdio.conf.ts creates. The wdio capability lets the app read them.
+export const folder = () => process.env.SHORUI_E2E_DIR!;
+
+export function writeNote(name: string, text: string): string {
+  mkdirSync(folder(), { recursive: true });
+  const path = join(folder(), name);
+  writeFileSync(path, text);
+  return path;
 }
