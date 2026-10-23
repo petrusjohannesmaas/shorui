@@ -53,10 +53,9 @@
   $effect(() => {
     startupFile()
       .then(async (path) => {
-        if (!path) return;
-        replaceDocument(await readText(path), path);
+        if (path) await openPath(path);
       })
-      .catch((error: unknown) => console.error('Could not open the startup file', error));
+      .catch((error: unknown) => console.error('Could not ask for the startup file', error));
   });
 
   function onkeydown(event: KeyboardEvent) {
@@ -114,10 +113,15 @@
     await loadFile();
   }
 
-  // A file that cannot be read leaves the document as it was.
   async function loadFile() {
     const path = await openDialog();
-    if (!path) return;
+    if (path) await openPath(path);
+  }
+
+  // Opens the file at path, for the open dialog and for the startup file. A
+  // file that cannot be read says so in the toast and leaves the document as
+  // it was.
+  async function openPath(path: string) {
     let text: string;
     try {
       text = await readText(path);

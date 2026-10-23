@@ -152,6 +152,17 @@ describe('a file that cannot be saved or opened', () => {
     expect(editorText(container)).toBe('keep');
     expect(fileName()).toBe('k.md');
   });
+
+  it('a failed startup file says so', async () => {
+    fakeBackend({ get_startup_file: '/notes/gone.md' }, ['plugin:fs|read_text_file']);
+    render(App);
+
+    await waitFor(() =>
+      expect(screen.getByTestId('toast').textContent?.trim()).toBe('Could not open gone.md'),
+    );
+    expect(fileName()).toBe('Untitled');
+    expect(screen.queryByTestId('dirty-dot')).toBeNull();
+  });
 });
 
 describe('the settings panel', () => {
