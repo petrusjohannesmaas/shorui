@@ -2,9 +2,8 @@
   import type { Snippet } from 'svelte';
   import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 
-  // The Alert Dialog keeps the focus inside, closes on Escape and returns the
-  // focus where it was. The title, the body and the two callbacks stay the same
-  // as the hand-written dialog had, so callers do not change.
+  // Asks before the user discards unsaved text. The focus starts on Cancel, so
+  // a stray Enter keeps the text, and the confirm button is the destructive one.
   let {
     title,
     confirmLabel = 'Confirm',
@@ -21,8 +20,9 @@
 
   let cancelButton = $state<HTMLButtonElement | null>(null);
 
-  // A modal dialog stops every key from reaching the shell behind it. Escape
-  // cancels, and the arrow keys and Backspace leave the module alone.
+  // The window's keydown handler in App.svelte runs Ctrl+N, Ctrl+O, Ctrl+S and
+  // Alt+M. Stopping propagation here keeps those shortcuts from acting on the
+  // document behind the dialog. Escape cancels.
   function onkeydown(event: KeyboardEvent) {
     event.stopPropagation();
     if (event.key === 'Escape') {

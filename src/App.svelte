@@ -54,9 +54,7 @@
     startupFile()
       .then(async (path) => {
         if (!path) return;
-        const text = await readText(path);
-        editor?.setContent(text);
-        filePath = path;
+        replaceDocument(await readText(path), path);
       })
       .catch((error: unknown) => console.error('Could not open the startup file', error));
   });
@@ -118,13 +116,19 @@
     await loadFile();
   }
 
+  // A file that cannot be read leaves the document as it was.
   async function loadFile() {
     const path = await openDialog();
     if (!path) return;
-    const text = await readText(path);
-    editor?.setContent(text);
-    filePath = path;
-    dirty = false;
+    let text: string;
+    try {
+      text = await readText(path);
+    } catch (error) {
+      console.error('Could not open the file', error);
+      showToast(`Could not open ${baseName(path)}`);
+      return;
+    }
+    replaceDocument(text, path);
   }
 
   // Runs the action the prompt was holding back.
@@ -144,21 +148,32 @@
   }
 
   function clearDocument() {
-    editor?.setContent('');
-    filePath = null;
+    replaceDocument('', null);
+  }
+
+  // Puts a whole new document in the editor, with the path it came from, or
+  // null for an Untitled one. Nothing in it is unsaved yet.
+  function replaceDocument(text: string, path: string | null) {
+    editor?.setContent(text);
+    filePath = path;
     dirty = false;
   }
 
   // Saves to the open file, or asks for a path first when the document is new.
+  // The path becomes the document's only after the write succeeds, so a failed
+  // save leaves the old name and the unsaved dot.
   async function saveFile() {
     const text = editor?.getContent() ?? '';
-    let path = filePath;
-    if (!path) {
-      path = await saveDialog('untitled.md');
-      if (!path) return;
-      filePath = path;
+    const path = filePath ?? (await saveDialog('untitled.md'));
+    if (!path) return;
+    try {
+      await writeText(path, text);
+    } catch (error) {
+      console.error('Could not save the file', error);
+      showToast(`Could not save ${baseName(path)}`);
+      return;
     }
-    await writeText(path, text);
+    filePath = path;
     dirty = false;
     showToast(`${baseName(path)} saved successfully`);
   }
@@ -175,9 +190,9 @@
 
 <div class="flex h-full w-full flex-col overflow-hidden bg-background text-foreground">
   <header
-    class="grid shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-border px-3 py-1.5 select-none"
+    class="grid shrink-0 grid-cols-[1fr_minmax(0,auto)_1fr] items-center gap-2 border-b border-border px-3 py-1.5 select-none"
   >
-    <div class="flex min-w-0 items-center gap-1">
+    <div class="flex items-center gap-1">
       <img src={icon} alt="Shorui" class="size-[21px]" />
       <TooltipProvider delayDuration={0}>
         <Tooltip>

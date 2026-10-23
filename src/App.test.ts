@@ -6,11 +6,13 @@ import App from './App.svelte';
 type Call = { command: string; args: unknown };
 
 // Fakes the Tauri calls App makes and records them, so a test can say what the
-// dialogs were asked and what was written.
-function fakeBackend(replies: Record<string, unknown> = {}) {
+// dialogs were asked and what was written. The commands in `failing` throw, as
+// a read or write the disk refuses does.
+function fakeBackend(replies: Record<string, unknown> = {}, failing: string[] = []) {
   const calls: Call[] = [];
   mockIPC((command, args) => {
     calls.push({ command, args });
+    if (failing.includes(command)) throw new Error(`${command} failed`);
     return replies[command] ?? null;
   });
   return calls;
@@ -113,6 +115,41 @@ describe('the file controls', () => {
     await waitFor(() => expect(fileName()).toBe('Untitled'));
     expect(editorText(container)).toBe('');
     expect(screen.queryByTestId('dirty-dot')).toBeNull();
+  });
+});
+
+describe('a file that cannot be saved or opened', () => {
+  it('a failed save keeps the old name and says so', async () => {
+    fakeBackend({ 'plugin:dialog|save': '/notes/x.md' }, ['plugin:fs|write_text_file']);
+    const { container } = render(App);
+    await type(container, 'Hello');
+
+    await fireEvent.keyDown(window, { key: 's', ctrlKey: true });
+
+    await waitFor(() =>
+      expect(screen.getByTestId('toast').textContent?.trim()).toBe('Could not save x.md'),
+    );
+    expect(fileName()).toBe('Untitled');
+    expect(screen.getByTestId('dirty-dot')).toBeTruthy();
+  });
+
+  it('a failed open says so', async () => {
+    fakeBackend(
+      { 'plugin:dialog|save': '/notes/k.md', 'plugin:dialog|open': '/notes/a.md' },
+      ['plugin:fs|read_text_file'],
+    );
+    const { container } = render(App);
+    await type(container, 'keep');
+    await fireEvent.keyDown(window, { key: 's', ctrlKey: true });
+    await waitFor(() => expect(screen.queryByTestId('dirty-dot')).toBeNull());
+
+    await fireEvent.keyDown(window, { key: 'o', ctrlKey: true });
+
+    await waitFor(() =>
+      expect(screen.getByTestId('toast').textContent?.trim()).toBe('Could not open a.md'),
+    );
+    expect(editorText(container)).toBe('keep');
+    expect(fileName()).toBe('k.md');
   });
 });
 

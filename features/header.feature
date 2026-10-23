@@ -32,3 +32,12 @@ Feature: Header
     Then the header controls sit in one row in order
     And the file name is truncated
     And the page does not scroll sideways
+
+  Scenario: The file name is centred
+    Given a markdown file "centre.md"
+      """
+      body
+      """
+    Then the file name is centred in the window
+    When I open Settings
+    Then the file name is centred in the window
