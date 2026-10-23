@@ -1,13 +1,13 @@
 # Shorui
 
-A minimal markdown editor built with Tauri v2, React, and TypeScript.
+A minimal markdown editor built with Tauri v2, Svelte 5, and TypeScript.
 
 ## Features
 
 - **Rich editor (default)** — headings, emphasis, links, lists, quotes and code blocks render in place; markers reappear around the cursor
 - **Code mode** — the same editor with the raw markdown showing
 - **Lossless** — the text is never re-serialised, so a save writes exactly what you typed
-- **Light/Dark theme** — follows system preference by default, toggleable
+- **Light and Dark theme** — starts in Dark. Settings holds the theme (Light or Dark) and the nine accent colours, saved across restarts
 - **File support** — open and save `.md` and `.txt` files
 - **Unsaved changes** — prompts before discarding unsaved work
 - **Toast notifications** — confirms successful saves
@@ -33,14 +33,17 @@ A minimal markdown editor built with Tauri v2, React, and TypeScript.
 | `Alt + ↑ / ↓` | Move line(s) up / down |
 | `Tab` / `Shift + Tab` | Indent / outdent |
 | `Alt + M` | Switch between rich editor and code mode |
-| `Alt + T` | Toggle theme |
+| `Alt + T` | Switch between Light and Dark, on the editor or Settings |
+| `Escape` | Leave Settings |
 
 ## Tech Stack
 
-- [Tauri v2](https://v2.tauri.app/) — Rust backend, native dialogs and filesystem access
-- [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) — frontend UI
-- [Vite](https://vitejs.dev/) — build tool and dev server
-- [CodeMirror 6](https://codemirror.net/) — editor, with a live-preview extension in `src/livePreview.ts`
+- [Tauri v2](https://v2.tauri.app/) for the desktop shell, with a Rust backend for native dialogs and filesystem access
+- [Svelte 5](https://svelte.dev/) + [TypeScript](https://www.typescriptlang.org/) for the frontend UI, in runes mode
+- [Tailwind CSS 4](https://tailwindcss.com/) for styling, with shadcn-svelte components in `src/lib/components/ui/`
+- [Lucide](https://lucide.dev/) icons through `@lucide/svelte`
+- [Vite](https://vitejs.dev/), the build tool and dev server
+- [CodeMirror 6](https://codemirror.net/) for the editor, with a live-preview extension in `src/livePreview.ts`
 
 ## Prerequisites
 
@@ -54,6 +57,21 @@ A minimal markdown editor built with Tauri v2, React, and TypeScript.
 npm install
 npm run tauri dev
 ```
+
+Run the tests:
+
+```bash
+npm test              # unit and component tests (Vitest)
+npm run test:e2e      # end-to-end tests (WebdriverIO and Cucumber) against a debug build
+```
+
+Write a bundle for `desktop-pull`:
+
+```bash
+npm run desktop:bundle
+```
+
+The bundle goes to `~/bundles/shorui/`.
 
 ## Build
 
