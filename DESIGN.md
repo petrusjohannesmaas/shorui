@@ -19,7 +19,7 @@ Shorui is a desktop markdown editor. It is a Tauri 2 app with a Svelte 5 fronten
 src/
   main.ts                   loads settings, then mounts App
   App.svelte                the header, the editor and the Settings panel
-  app.css                   Tailwind, the colour variables mapped to Tailwind, the fonts and the focus ring
+  app.css                   Tailwind, the colour variables mapped to Tailwind, the fonts, the focus ring and the editor styles
   Editor.svelte             the CodeMirror view, with getContent, setContent and focus
   commands.ts               the markdown shortcut commands
   livePreview.ts            rich mode: rendered markdown, tables and the code block copy buttons
@@ -31,6 +31,7 @@ src/
   components/               ConfirmDialog, Toast and the Settings panel
   themes/                   one CSS file per theme, and index.ts listing them
   test/setup.ts             Vitest setup
+  test/fake-store.ts        an in-memory tauri-plugin-store behind mockIPC, for component tests
 features/                   Gherkin files, with step definitions in features/step-definitions/
 scripts/bundle-desktop.sh   builds the bundle for desktop-pull
 src-tauri/src/lib.rs        Tauri builder, plugins, get_startup_file, wdio plugins behind the feature
@@ -44,6 +45,8 @@ src-tauri/src/lib.rs        Tauri builder, plugins, get_startup_file, wdio plugi
 - The editor stays mounted for the app's whole life. Settings is an opaque, inert panel laid over it, so the text, cursor, scroll position and undo history survive a visit to Settings. The panel fades and slides in over 150 ms by 8 px, with no motion when the system asks for reduced motion.
 - New and Open with unsaved changes ask "You have unsaved changes. Continue without saving?" in `ConfirmDialog`, with the focus on Cancel. Closing the window does not ask.
 - A save shows "<name> saved successfully" in the toast for 2.5 seconds.
+- A failed save shows "Could not save <name>" and keeps the old name and the unsaved dot. The path changes only after the write succeeds. A failed open shows "Could not open <name>" and leaves the document as it was.
+- While Settings is open, the header's New, Open, Save, Rich and Code buttons are disabled. Only Back acts.
 
 ## Editor
 
@@ -67,7 +70,7 @@ src-tauri/src/lib.rs        Tauri builder, plugins, get_startup_file, wdio plugi
 ## Settings
 
 - `settings.json` in the app data folder holds `theme` (`light` or `dark`, default `dark`) and `accent` (default `blue`). An unknown value falls back to the default.
-- A change applies at once and is then saved. Saves run one after another.
+- A change applies at once and is then saved. Saves run one after another. A failed save is logged once as "Could not save settings" and never rejects, so callers do not catch it. The change still shows, but it will not survive a restart.
 - End-to-end builds use `settings.e2e.json`, so test runs never touch the user's settings.
 
 ## Platform boundary
@@ -91,6 +94,7 @@ src-tauri/src/lib.rs        Tauri builder, plugins, get_startup_file, wdio plugi
 | End-to-end | `npm run test:e2e` | Gherkin scenarios in `features/` run by WebdriverIO and Cucumber against a debug build of the real app. |
 
 - One test: `npx vitest run src/lib/settings.test.ts`.
+- `npm run build` runs `svelte-check` before `vite build`, so a type error fails the build, the e2e build and the bundle.
 - Suites go through the test queue: `test-queue submit light 'npm ci && npm test'` and `test-queue submit heavy 'npm ci && npm run test:e2e'`.
 - `npm run test:e2e` builds with `VITE_E2E=1 tauri build --debug --no-bundle --features wdio --config src-tauri/tauri.wdio.json`, then runs `GDK_BACKEND=x11 xvfb-run -a wdio run wdio.conf.ts`.
 - `tauri-plugin-wdio` and `tauri-plugin-wdio-webdriver` sit behind the `wdio` cargo feature. The e2e build merges `tauri.wdio.json`, which enables the `wdio` capability. That capability adds `core:app:allow-exit` for restarts and fs access to the run's temporary folder, which lies outside the home scope.
