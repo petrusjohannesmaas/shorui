@@ -190,7 +190,7 @@
 
 <div class="flex h-full w-full flex-col overflow-hidden bg-background text-foreground">
   <header
-    class="grid shrink-0 grid-cols-[1fr_minmax(0,auto)_1fr] items-center gap-2 border-b border-border px-3 py-1.5 select-none"
+    class="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-border px-3 py-1.5 select-none"
   >
     <div class="flex items-center gap-1">
       <img src={icon} alt="Shorui" class="size-[21px]" />
