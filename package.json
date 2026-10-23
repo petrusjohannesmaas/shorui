@@ -11,6 +11,7 @@
     "test:watch": "vitest",
     "test:e2e": "npm run build:e2e && GDK_BACKEND=x11 xvfb-run -a wdio run wdio.conf.ts",
     "build:e2e": "VITE_E2E=1 tauri build --debug --no-bundle --features wdio --config src-tauri/tauri.wdio.json",
+    "desktop:bundle": "scripts/bundle-desktop.sh",
     "tauri": "tauri"
   },
   "dependencies": {
