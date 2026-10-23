@@ -1,15 +1,7 @@
 import { Given, Then, When } from '@wdio/cucumber-framework';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { folder, startApp, writeNote } from './app';
-
-async function waitFor(check: () => Promise<boolean>, what: string) {
-  await browser.waitUntil(check, {
-    timeout: 5_000,
-    interval: 50,
-    timeoutMsg: `The header did not show ${what} within 5 s`,
-  });
-}
+import { folder, startApp, waitFor, writeNote } from './app';
 
 Given('no file is open', async () => {
   await startApp();
@@ -181,18 +173,11 @@ Then('the page does not scroll sideways', async () => {
 Then('the file name is centred in the window', async () => {
   // The name's centre must sit within 2 px of the window's centre, whichever
   // button shares the right-hand group with Rich and Code.
-  await browser.waitUntil(
-    async () => {
-      const offset = await browser.execute(() => {
-        const rect = document.querySelector('[data-testid="file-name"]')!.getBoundingClientRect();
-        return Math.abs((rect.left + rect.right) / 2 - document.documentElement.clientWidth / 2);
-      });
-      return offset <= 2;
-    },
-    {
-      timeout: 5_000,
-      interval: 50,
-      timeoutMsg: 'The file name was not within 2 px of the window centre after 5 s',
-    },
-  );
+  await waitFor(async () => {
+    const offset = await browser.execute(() => {
+      const rect = document.querySelector('[data-testid="file-name"]')!.getBoundingClientRect();
+      return Math.abs((rect.left + rect.right) / 2 - document.documentElement.clientWidth / 2);
+    });
+    return offset <= 2;
+  }, 'the file name within 2 px of the window centre');
 });

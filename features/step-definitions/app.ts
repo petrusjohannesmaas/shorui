@@ -12,7 +12,7 @@ export const EMBEDDED_PORT = 4445;
 export const RELAUNCHED_PIDS = join(tmpdir(), 'shorui-e2e-relaunched.pids');
 export const RELAUNCHED_LOG = join(tmpdir(), 'shorui-e2e-relaunched.log');
 
-// How often the waits below re-check their condition.
+// How often pollUntil re-checks its condition.
 const POLL_INTERVAL_MS = 100;
 
 async function serverUp(): Promise<boolean> {
@@ -24,7 +24,9 @@ async function serverUp(): Promise<boolean> {
   }
 }
 
-async function waitFor(condition: () => Promise<boolean>, what: string, timeout = 15_000) {
+// Polls with fetch and timers, not the WebDriver session, because the app it
+// waits for may be closed or not yet started.
+async function pollUntil(condition: () => Promise<boolean>, what: string, timeout = 15_000) {
   const end = Date.now() + timeout;
   while (Date.now() < end) {
     if (await condition()) return;
@@ -33,12 +35,21 @@ async function waitFor(condition: () => Promise<boolean>, what: string, timeout 
   throw new Error(`Timed out after ${timeout} ms waiting for ${what}`);
 }
 
+// Waits up to 5 s for the open app to show something, re-checking every 50 ms.
+export async function waitFor(check: () => Promise<boolean>, what: string) {
+  await browser.waitUntil(check, {
+    timeout: 5_000,
+    interval: 50,
+    timeoutMsg: `The app did not show ${what} within 5 s`,
+  });
+}
+
 export async function appIsClosed(): Promise<boolean> {
   return !(await serverUp());
 }
 
 async function waitForAppToClose(timeout = 5_000) {
-  await waitFor(appIsClosed, 'the app to close', timeout);
+  await pollUntil(appIsClosed, 'the app to close', timeout);
 }
 
 // Starts the app with the arguments a scenario needs and reconnects the
@@ -57,7 +68,7 @@ export async function launchApp(args: string[] = []) {
   appendFileSync(RELAUNCHED_PIDS, `${child.pid}\n`);
   // The service gives a fresh app 60 s on its embedded server, and the first
   // launch of a run is the slowest, so this waits as long.
-  await waitFor(serverUp, 'the relaunched app', 60_000);
+  await pollUntil(serverUp, 'the relaunched app', 60_000);
   await browser.reloadSession();
   await $('main').waitForExist({ timeout: 20_000 });
 }

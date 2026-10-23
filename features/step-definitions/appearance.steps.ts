@@ -1,5 +1,5 @@
 import { Given, Then, When } from '@wdio/cucumber-framework';
-import { startApp, writeNote } from './app';
+import { startApp, waitFor, writeNote } from './app';
 
 const PANEL = '[data-testid="settings-panel"]';
 const THEMES = '[role="group"][aria-labelledby="theme-label"]';
@@ -8,14 +8,6 @@ const ACCENTS = '[role="group"][aria-labelledby="accent-label"]';
 async function openSettings() {
   await $('button[aria-label="Settings"]').click();
   await $(PANEL).waitForDisplayed({ timeout: 5_000 });
-}
-
-async function waitFor(check: () => Promise<boolean>, what: string) {
-  await browser.waitUntil(check, {
-    timeout: 5_000,
-    interval: 50,
-    timeoutMsg: `The app did not show ${what} within 5 s`,
-  });
 }
 
 // Resolves a CSS colour expression, such as var(--accent-text), to the rgb()
