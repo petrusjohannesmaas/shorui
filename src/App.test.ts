@@ -115,3 +115,47 @@ describe('the file controls', () => {
     expect(screen.queryByTestId('dirty-dot')).toBeNull();
   });
 });
+
+describe('the settings panel', () => {
+  it('settings panel opens and closes', async () => {
+    fakeBackend();
+    render(App);
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+
+    await screen.findByTestId('settings-panel');
+    screen.getByText('Theme');
+    screen.getByText('Accent colour');
+    expect(screen.getByRole('button', { name: 'Back' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Settings' })).toBeNull();
+
+    await fireEvent.keyDown(window, { key: 'Escape' });
+
+    await waitFor(() => expect(screen.queryByTestId('settings-panel')).toBeNull());
+    expect(screen.getByRole('button', { name: 'Settings' })).toBeTruthy();
+  });
+
+  it('file and mode keys wait while Settings is open', async () => {
+    const calls = fakeBackend();
+    render(App);
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    await screen.findByTestId('settings-panel');
+
+    // Nothing the panel does reaches the backend, so no call at all should
+    // arrive from one of these keys.
+    const before = calls.length;
+
+    await fireEvent.keyDown(window, { key: 'n', ctrlKey: true });
+    await fireEvent.keyDown(window, { key: 'o', ctrlKey: true });
+    await fireEvent.keyDown(window, { key: 's', ctrlKey: true });
+    await fireEvent.keyDown(window, { key: 'm', altKey: true });
+
+    expect(calls.length).toBe(before);
+    expect(callsTo(calls, 'plugin:dialog|open')).toHaveLength(0);
+    expect(callsTo(calls, 'plugin:dialog|save')).toHaveLength(0);
+    expect(callsTo(calls, 'plugin:fs|write_text_file')).toHaveLength(0);
+    expect(screen.getByRole('button', { name: 'Rich' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Code' }).getAttribute('aria-pressed')).toBe('false');
+  });
+});

@@ -1,7 +1,9 @@
 <script lang="ts">
-  import { Code, FilePlus, FolderOpen, PenLine, Save, Settings } from '@lucide/svelte';
+  import { tick } from 'svelte';
+  import { ArrowLeft, Code, FilePlus, FolderOpen, PenLine, Save, Settings } from '@lucide/svelte';
   import Editor, { type EditorMode } from './Editor.svelte';
   import ConfirmDialog from './components/ConfirmDialog.svelte';
+  import SettingsPanel from './components/SettingsPanel.svelte';
   import Toast from './components/Toast.svelte';
   import { buttonVariants } from '$lib/components/ui/button/index.js';
   import {
@@ -11,6 +13,7 @@
     TooltipTrigger,
   } from '$lib/components/ui/tooltip/index.js';
   import { openDialog, readText, saveDialog, startupFile, writeText } from '$lib/platform';
+  import { settings } from '$lib/settings.svelte';
   import { cn } from '$lib/utils';
   import icon from '../src-tauri/icons/32x32.png';
 
@@ -21,6 +24,7 @@
   // The action waiting on the unsaved-changes prompt, or null when it is shut.
   let pending = $state<'new' | 'open' | null>(null);
   let toast = $state<string | null>(null);
+  let settingsOpen = $state(false);
   let toastTimer: ReturnType<typeof setTimeout> | undefined;
 
   const fileName = $derived(filePath ? baseName(filePath) : 'Untitled');
@@ -31,6 +35,18 @@
 
   function setMode(next: EditorMode) {
     mode = next;
+  }
+
+  function openSettings() {
+    settingsOpen = true;
+  }
+
+  // The editor stayed mounted the whole time, so closing only puts the caret
+  // back in it. The focus waits for the DOM update that takes the editor out
+  // of its inert state, since an inert editor cannot take focus.
+  function closeSettings() {
+    settingsOpen = false;
+    void tick().then(() => editor?.focus());
   }
 
   // The file the app was started with, if the user opened Shorui with one.
@@ -46,6 +62,28 @@
   });
 
   function onkeydown(event: KeyboardEvent) {
+    // Alt+T switches the theme on either screen.
+    if (
+      event.altKey &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      event.key.toLowerCase() === 't'
+    ) {
+      event.preventDefault();
+      void settings.toggleTheme().catch((error: unknown) =>
+        console.error('Could not save settings', error),
+      );
+      return;
+    }
+    // The editor's shortcuts need the editor in front. Settings closes with
+    // Escape and nothing else.
+    if (settingsOpen) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeSettings();
+      }
+      return;
+    }
     if (event.ctrlKey || event.metaKey) {
       const key = event.key.toLowerCase();
       if (key === 'n') {
@@ -223,22 +261,42 @@
           <TooltipContent side="bottom">Code mode (Alt+M)</TooltipContent>
         </Tooltip>
 
-        <Tooltip>
-          <TooltipTrigger
-            aria-label="Settings"
-            class={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}
-          >
-            <Settings class="size-4" aria-hidden="true" />
-            Settings
-          </TooltipTrigger>
-          <TooltipContent side="bottom">Settings</TooltipContent>
-        </Tooltip>
+        {#if settingsOpen}
+          <Tooltip>
+            <TooltipTrigger
+              aria-label="Back"
+              class={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}
+              onclick={closeSettings}
+            >
+              <ArrowLeft class="size-4" aria-hidden="true" />
+              Back
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Back to the editor (Escape)</TooltipContent>
+          </Tooltip>
+        {:else}
+          <Tooltip>
+            <TooltipTrigger
+              aria-label="Settings"
+              class={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}
+              onclick={openSettings}
+            >
+              <Settings class="size-4" aria-hidden="true" />
+              Settings
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Settings</TooltipContent>
+          </Tooltip>
+        {/if}
       </TooltipProvider>
     </div>
   </header>
 
-  <main class="flex min-h-0 flex-1 overflow-hidden">
-    <Editor bind:this={editor} {mode} onchange={() => (dirty = true)} />
+  <main class="relative flex min-h-0 flex-1 overflow-hidden">
+    <div data-testid="editor-area" inert={settingsOpen} class="flex min-h-0 min-w-0 flex-1">
+      <Editor bind:this={editor} {mode} onchange={() => (dirty = true)} />
+    </div>
+    {#if settingsOpen}
+      <SettingsPanel />
+    {/if}
   </main>
 </div>
 

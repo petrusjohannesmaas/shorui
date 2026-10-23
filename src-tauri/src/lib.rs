@@ -3,6 +3,7 @@ pub fn run() {
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_store::Builder::new().build())
         .invoke_handler(tauri::generate_handler![get_startup_file]);
 
     // Only the e2e builds enable the `wdio` feature, so a normal build has no
