@@ -431,9 +431,6 @@ export const richModeAttributes = EditorView.editorAttributes.of({
   class: "cm-rich",
 });
 
-const MONO =
-  '"SF Mono", "Fira Code", "Cascadia Code", "JetBrains Mono", Menlo, Monaco, Consolas, monospace';
-
 export const markdownHighlight = HighlightStyle.define([
   { tag: tags.heading, fontWeight: "600" },
   { tag: tags.strong, fontWeight: "700" },
@@ -441,7 +438,7 @@ export const markdownHighlight = HighlightStyle.define([
   { tag: tags.strikethrough, textDecoration: "line-through" },
   { tag: tags.link, color: "var(--preview-link)" },
   { tag: tags.url, color: "var(--text-secondary)" },
-  { tag: tags.monospace, fontFamily: MONO },
+  { tag: tags.monospace, fontFamily: "var(--font-mono)" },
   { tag: tags.quote, color: "var(--preview-blockquote-text)" },
   { tag: tags.processingInstruction, color: "var(--text-secondary)" },
   { tag: tags.contentSeparator, color: "var(--text-secondary)" },

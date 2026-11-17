@@ -1,0 +1,11 @@
+DEFERRED
+OUT OF SCOPE
+- 23 October 2026 | #7 | Fixing the crash and clipboard bug. | Its own issue, #8.
+- 23 October 2026 | #7 | Draft recovery after an accidental close. | Its own issue, #9.
+- 23 October 2026 | #7 | New editor features. | Not part of the rewrite.
+- 23 October 2026 | #7 | Zaimu's or Allies' styling where it differs from Taskflow's. | Taskflow is the reference.
+- 23 October 2026 | #7 | A new logo or wordmark. | Needs MADE Outer Sans or design work, its own issue.
+- 23 October 2026 | #7 | Any change to tools/md-encrypted-pdf. | Imported tool with its own history.
+- 23 October 2026 | #7 | A prompt when the window closes with unsaved text. | Belongs to #9.
+DECISIONS
+NOTES
